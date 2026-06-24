@@ -32,6 +32,7 @@ class FrankaFollowEnvCfg(FollowEnvCfg):
         self.rewards.end_effector_position_tracking_fine_grained.params["asset_cfg"].body_names = ["panda_hand"]
         self.rewards.end_effector_velocity_tracking.params["asset_cfg"].body_names = ["panda_hand"]
         self.rewards.end_effector_velocity_tracking_fine_grained.params["asset_cfg"].body_names = ["panda_hand"]
+        self.rewards.end_effector_orientation_tracking.params["asset_cfg"].body_names = ["panda_hand"]
 
         # relative joint-position control with EMA smoothing
         self.actions.arm_action = mdp.SmoothedJointPositionActionCfg(

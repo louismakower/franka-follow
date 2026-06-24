@@ -98,14 +98,31 @@ def make_random_loop(seed: int, n_pts: int, period: float, bounds=WORKSPACE_BOUN
 TRAIN_BANK: list[Waypoints] = [
     # circles of varying radius / plane
     make_circle(center=(0.5, 0.0, 0.30), radius=0.12, period=5.0, normal=(0.0, 0.0, 1.0)),  # horizontal
-    # make_circle(center=(0.5, 0.0, 0.35), radius=0.15, period=7.0, normal=(0.0, 1.0, 0.0)),  # vertical (x-z)
-    # make_circle(center=(0.5, 0.0, 0.30), radius=0.10, period=4.0, normal=(1.0, 0.0, 1.0)),  # tilted
-    # # figure-of-eights
-    # make_figure8(center=(0.5, 0.0, 0.30), rx=0.14, ry=0.12, period=6.0, normal=(0.0, 0.0, 1.0)),
-    # make_figure8(center=(0.5, 0.0, 0.35), rx=0.13, ry=0.12, period=8.0, normal=(0.0, 1.0, 0.0)),
-    # # random closed loops (frozen via fixed seeds)
-    # make_random_loop(seed=0, n_pts=5, period=6.0),
-    # make_random_loop(seed=1, n_pts=6, period=7.0),
-    # make_random_loop(seed=2, n_pts=7, period=8.0),
-    # make_random_loop(seed=3, n_pts=6, period=5.0),
+    make_circle(center=(0.5, 0.0, 0.35), radius=0.15, period=7.0, normal=(0.0, 1.0, 0.0)),  # vertical (x-z)
+    make_circle(center=(0.5, 0.0, 0.30), radius=0.10, period=4.0, normal=(1.0, 0.0, 1.0)),  # tilted
+    # figure-of-eights
+    make_figure8(center=(0.5, 0.0, 0.30), rx=0.14, ry=0.12, period=6.0, normal=(0.0, 0.0, 1.0)),
+    make_figure8(center=(0.5, 0.0, 0.35), rx=0.13, ry=0.12, period=8.0, normal=(0.0, 1.0, 0.0)),
+    # random closed loops (frozen via fixed seeds)
+    make_random_loop(seed=0, n_pts=5, period=6.0),
+    make_random_loop(seed=1, n_pts=6, period=7.0),
+    make_random_loop(seed=2, n_pts=7, period=8.0),
+    make_random_loop(seed=3, n_pts=6, period=5.0),
+]
+
+# Per-trajectory gimbal target: the (x, y, z) point (root frame) the end-effector should aim at while
+# tracing the matching loop in ``TRAIN_BANK``. One point per loop; ORDER MUST STAY ALIGNED WITH TRAIN_BANK.
+# Each loop aims at its own geometric centre (the makers' ``center`` arg; the workspace-box centre for the
+# random loops, which is where ``make_random_loop`` centres its samples).
+_WORKSPACE_CENTER = [0.5 * (lo + hi) for lo, hi in WORKSPACE_BOUNDS]  # (0.5, 0.0, 0.325)
+TRAIN_LOOKAT: list[list[float]] = [
+    [0.5, 0.0, 0.30],  # horizontal circle centre
+    [0.5, 0.0, 0.35],  # vertical circle centre
+    [0.5, 0.0, 0.30],  # tilted circle centre
+    [0.5, 0.0, 0.30],  # figure-8 centre
+    [0.5, 0.0, 0.35],  # figure-8 centre
+    list(_WORKSPACE_CENTER),  # random loop (seed 0)
+    list(_WORKSPACE_CENTER),  # random loop (seed 1)
+    list(_WORKSPACE_CENTER),  # random loop (seed 2)
+    list(_WORKSPACE_CENTER),  # random loop (seed 3)
 ]

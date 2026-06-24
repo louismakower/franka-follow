@@ -78,6 +78,7 @@ class CommandsCfg:
         trajectories=mdp.TRAIN_BANK,
         bc_type="periodic",
         future_length=10,  # number of future targets exposed in the observation (look-ahead)
+        look_at_targets=mdp.TRAIN_LOOKAT,  # per-loop gimbal point the EE aims at; same length as trajectories
     )
 
 
@@ -159,6 +160,13 @@ class RewardsCfg:
         func=mdp.velocity_command_error_tanh,
         weight=0.1,  # 0.1
         params={"asset_cfg": SceneEntityCfg("robot", body_names=MISSING), "std": 0.2, "command_name": "trajectory"},
+    )
+
+    # gimbal: aim the EE +z at the trajectory's look-at target (penalizes aim + roll together)
+    end_effector_orientation_tracking = RewTerm(
+        func=mdp.look_at_orientation_error,
+        weight=-0.02,
+        params={"asset_cfg": SceneEntityCfg("robot", body_names=MISSING), "command_name": "trajectory"},
     )
 
     # action penalty
