@@ -85,7 +85,7 @@ from isaaclab_tasks.utils import get_checkpoint_path
 from isaaclab_tasks.utils.hydra import hydra_task_config
 
 from louis_rl.rl_runner import RLRunner
-from louis_rl.isaac.env_wrapper import IsaacEnvWrapper, ReturnTerminalManagerBasedRLEnv
+from louis_rl.isaac.env_wrapper import IsaacEnvWrapper
 
 # import logger
 logger = logging.getLogger(__name__)

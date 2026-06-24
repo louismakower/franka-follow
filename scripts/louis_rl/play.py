@@ -66,7 +66,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg, agent_cfg):
         )
 
     env = IsaacEnvWrapper(env)
-    runner = RLRunner(env, agent_cfg, log_dir="/tmp/louis_rl_play")
+    runner = RLRunner(env, agent_cfg, log_dir="/tmp/louis_rl_play", inference_only=True)
     runner.load_checkpoint(args_cli.checkpoint)
 
     obs, _ = env.reset()
