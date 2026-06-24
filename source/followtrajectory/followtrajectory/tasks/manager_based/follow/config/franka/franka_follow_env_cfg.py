@@ -33,10 +33,9 @@ class FrankaFollowEnvCfg(FollowEnvCfg):
         self.rewards.end_effector_velocity_tracking.params["asset_cfg"].body_names = ["panda_hand"]
         self.rewards.end_effector_velocity_tracking_fine_grained.params["asset_cfg"].body_names = ["panda_hand"]
 
-        # map policy output [-1, 1] onto each joint's full limit range
-        # lets SAC's tanh-bounded actions reach the whole joint range
-        self.actions.arm_action = mdp.JointPositionToLimitsActionCfg(
-            asset_name="robot", joint_names=["panda_joint.*"], scale=1.0, rescale_to_limits=True
+        # relative joint-position control with EMA smoothing
+        self.actions.arm_action = mdp.SmoothedJointPositionActionCfg(
+            asset_name="robot", joint_names=["panda_joint.*"], moving_average=0.2
         )
 
 @configclass

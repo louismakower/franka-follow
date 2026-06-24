@@ -85,7 +85,7 @@ class CommandsCfg:
 class ActionsCfg:
     """Action specifications for the MDP."""
 
-    arm_action: ActionTerm = MISSING
+    arm_action: ActionTerm = MISSING  # TODO could have the EMA actions here to make it smoother
     gripper_action: ActionTerm | None = None
 
 
@@ -100,16 +100,25 @@ class ObservationsCfg:
         # observation terms (order preserved)
         joint_pos = ObsTerm(func=mdp.joint_pos_rel, noise=Unoise(n_min=-0.01, n_max=0.01))
         joint_vel = ObsTerm(func=mdp.joint_vel_rel, noise=Unoise(n_min=-0.01, n_max=0.01))
-        trajectory_command = ObsTerm(func=mdp.generated_commands, params={"command_name": "trajectory"})
         actions = ObsTerm(func=mdp.last_action)
 
         def __post_init__(self):
             self.enable_corruption = True
             self.concatenate_terms = True
-            self.history_length = 3
+            self.history_length = 5
+
+    @configclass
+    class CommandObsCfg(ObsGroup):
+        trajectory_command = ObsTerm(func=mdp.generated_commands, params={"command_name": "trajectory"})
+
+        def __post_init__(self):
+            self.enable_corruption = False
+            self.concatenate_terms = True
+            self.history_length = 1
 
     # observation groups
     policy: PolicyCfg = PolicyCfg()
+    policy_command_obs: CommandObsCfg = CommandObsCfg()
 
 
 @configclass
@@ -153,11 +162,10 @@ class RewardsCfg:
     )
 
     # action penalty
-    action_rate = RewTerm(func=mdp.action_rate_l2, weight=-0.01)
-    joint_acc = RewTerm(
-        func=mdp.joint_acc_l2,
-        weight=-2.5e-5,  # joint accels are large in magnitude, so keep this small
-        params={"asset_cfg": SceneEntityCfg("robot")},
+    joint_vel = RewTerm(
+        func=mdp.joint_vel_l1,
+        weight=-0.007,
+        params={"asset_cfg": SceneEntityCfg("robot")}
     )
 
 
@@ -166,20 +174,6 @@ class TerminationsCfg:
     """Termination terms for the MDP."""
 
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
-
-
-@configclass
-class CurriculumCfg:
-    """Curriculum terms for the MDP."""
-
-    action_rate = CurrTerm(
-        func=mdp.modify_reward_weight, params={"term_name": "action_rate", "weight": -0.005, "num_steps": 4500}
-    )
-
-    joint_acc = CurrTerm(
-        func=mdp.modify_reward_weight, params={"term_name": "joint_acc", "weight": -2.5e-5, "num_steps": 4500}
-    )
-
 
 ##
 # Environment configuration
@@ -200,7 +194,6 @@ class FollowEnvCfg(ManagerBasedRLEnvCfg):
     rewards: RewardsCfg = RewardsCfg()
     terminations: TerminationsCfg = TerminationsCfg()
     events: EventCfg = EventCfg()
-    curriculum: CurriculumCfg = CurriculumCfg()
 
     def __post_init__(self):
         """Post initialization."""

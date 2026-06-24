@@ -12,7 +12,7 @@ class FrankaReachSACCfg(SACRunnerCfg):
     alpha_lr = 3e-4
     target_entropy = "auto"
 
-    replay_buffer_size = 2_500_000
+    replay_buffer_size = 5_000_000
     warmup_transitions = 200_000
 
     q_hidden_dims = [256, 256]
