@@ -157,7 +157,7 @@ class RewardsCfg:
     # task terms
     end_effector_position_tracking = RewTerm(
         func=mdp.position_command_error,
-        weight=-0.2,  # -0.2
+        weight=-0.1,  # -0.2
         params={"asset_cfg": SceneEntityCfg("robot", body_names=MISSING), "command_name": "trajectory"},
     )
     end_effector_position_tracking_fine_grained = RewTerm(
@@ -167,7 +167,7 @@ class RewardsCfg:
     )
     end_effector_velocity_tracking = RewTerm(
         func=mdp.velocity_command_error,
-        weight=-0.1,  # -0.1
+        weight=-0.05,  # -0.1
         params={"asset_cfg": SceneEntityCfg("robot", body_names=MISSING), "command_name": "trajectory"},
     )
     end_effector_velocity_tracking_fine_grained = RewTerm(

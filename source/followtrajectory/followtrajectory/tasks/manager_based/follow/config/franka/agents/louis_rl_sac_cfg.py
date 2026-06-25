@@ -7,13 +7,13 @@ from isaaclab.utils import configclass
 class FrankaReachSACCfg(SACRunnerCfg):
     experiment_name = "franka_follow_sac"
 
-    gamma = 0.99
+    gamma = 0.98
     alpha_init = 0.1
     alpha_lr = 3e-4
     target_entropy = "auto"
 
-    replay_buffer_size = 5_000_000
-    warmup_transitions = 20_000
+    replay_buffer_size = 2_500_000
+    warmup_transitions = 80_000
 
     q_hidden_dims = [256, 256]
     q_learning_rate = 3e-4
@@ -25,13 +25,13 @@ class FrankaReachSACCfg(SACRunnerCfg):
     logstd_max = 2.0
     policy_learning_rate = 3e-4
 
-    reward_scaling = False
+    reward_scaling = True
     reward_G_max = 5.0
     reward_clip = 0.0
 
-    max_steps = 7500
+    max_steps = 30_000
     steps_per_iter = 1
-    num_train_updates = 16
+    num_train_updates = 8
     batch_size = 1024
 
     save_interval = 600
