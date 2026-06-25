@@ -50,7 +50,7 @@ STUDIES = {
 
 
 def _run_name(study: str, cell: dict, seed: int) -> str:
-    parts = [f"{k.split('.')[-1]}={v}" for k, v in cell.items()]
+    parts = [f"{k.split('.')[-1]}-{v}" for k, v in cell.items()]
     return f"{study}__{'_'.join(parts)}__seed{seed}"
 
 
@@ -78,8 +78,8 @@ def main():
     parser.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2])
     # SAC max_steps counts learn-iterations (each steps all envs once + does num_train_updates
     # gradient steps), so this is far smaller than total env-steps. Tune to your compute budget.
-    parser.add_argument("--max_steps", type=int, default=50_000)
-    parser.add_argument("--num_envs", type=int, default=512)
+    parser.add_argument("--max_steps", type=int, default=7500)
+    parser.add_argument("--num_envs", type=int, default=64)
     parser.add_argument("--skip_existing", action="store_true", help="Skip runs already in results.json.")
     args, passthrough = parser.parse_known_args()
     passthrough = [a for a in passthrough if a != "--"]

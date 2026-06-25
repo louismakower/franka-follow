@@ -13,7 +13,7 @@ class FrankaReachSACCfg(SACRunnerCfg):
     target_entropy = "auto"
 
     replay_buffer_size = 5_000_000
-    warmup_transitions = 200_000
+    warmup_transitions = 20_000
 
     q_hidden_dims = [256, 256]
     q_learning_rate = 3e-4
@@ -29,9 +29,9 @@ class FrankaReachSACCfg(SACRunnerCfg):
     reward_G_max = 5.0
     reward_clip = 0.0
 
-    max_steps = 500_000
+    max_steps = 7500
     steps_per_iter = 1
-    num_train_updates = 10
+    num_train_updates = 16
     batch_size = 1024
 
     save_interval = 600
