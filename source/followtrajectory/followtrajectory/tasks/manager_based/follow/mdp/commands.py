@@ -13,6 +13,9 @@ from isaaclab.envs import ManagerBasedRLEnv
 from scipy.interpolate import CubicSpline
 import torch
 
+from .trajectories import make_bank
+
+
 class TrajectoryCommand(CommandTerm):
     cfg: TrajectoryCommandCfg
     _env: ManagerBasedRLEnv
@@ -25,10 +28,15 @@ class TrajectoryCommand(CommandTerm):
         self.traj_progress = self._random_phase(self.traj_id)
 
     def _init_trajectory(self):
-        # fit each trajectory's cubic spline 
+        # resolve the trajectory bank: explicit list wins, else build from split/count (0 -> all)
+        trajectories = self.cfg.trajectories
+        if trajectories is None:
+            n = self.cfg.num_trajectories or None
+            trajectories = make_bank(self.cfg.split, n)
+        # fit each trajectory's cubic spline
         # pad every trajectory to a common length so the bank is a single (num_traj, max_len, 3)
         pos_list, vel_list, lengths = [], [], []
-        for traj in self.cfg.trajectories:
+        for traj in trajectories:
             points = torch.tensor(traj)  # (num_waypoints, 4), keep on cpu for scipy
             t = points[:, 3]
             x, y, z = points[:, 0], points[:, 1], points[:, 2]
@@ -89,9 +97,16 @@ class TrajectoryCommand(CommandTerm):
     def reset(self, env_ids=None):
         ids = slice(None) if env_ids is None else env_ids
         n = self.num_envs if env_ids is None else len(env_ids)
-        # pick a new trajectory and a random starting phase along it
-        self.traj_id[ids] = torch.randint(0, self.num_traj, (n,), device=self.device)
-        self.traj_progress[ids] = self._random_phase(self.traj_id[ids])
+        if self.cfg.deterministic_eval:
+            # reproducible coverage: env i -> trajectory i (mod num_traj), starting at phase 0.
+            # with num_envs a multiple of num_traj every loop gets equal, repeatable coverage.
+            global_ids = torch.arange(self.num_envs, device=self.device) if env_ids is None else env_ids
+            self.traj_id[ids] = (global_ids % self.num_traj).long()
+            self.traj_progress[ids] = torch.zeros(n, device=self.device, dtype=torch.long)
+        else:
+            # pick a new trajectory and a random starting phase along it
+            self.traj_id[ids] = torch.randint(0, self.num_traj, (n,), device=self.device)
+            self.traj_progress[ids] = self._random_phase(self.traj_id[ids])
         extras = super().reset(env_ids)
         self._command = self._calculate_command()  # refresh so first obs of the episode isn't stale
         return extras
@@ -129,7 +144,13 @@ class TrajectoryCommand(CommandTerm):
 @configclass
 class TrajectoryCommandCfg(CommandTermCfg):
     class_type: type = TrajectoryCommand
-    # bank of closed loops; each is a list of [x, y, z, t] waypoints, e.g. [[x1,y1,z1,t1], ...]
-    trajectories: list[list[list[float]]] = MISSING
+    # bank of closed loops; each is a list of [x, y, z, t] waypoints, e.g. [[x1,y1,z1,t1], ...].
+    # set to None to build the bank from split and num_trajectories
+    trajectories: list[list[list[float]]] | None = None
+    # bank to draw from when trajectories is None ("train" or "eval")
+    split: str = "train"
+    # number of trajectories to use from the split (0 uses all of them)
+    num_trajectories: int = 0
+    deterministic_eval: bool = False
     bc_type: str = MISSING
     future_length: int = MISSING

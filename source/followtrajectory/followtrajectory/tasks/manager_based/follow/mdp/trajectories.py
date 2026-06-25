@@ -92,20 +92,48 @@ def make_random_loop(seed: int, n_pts: int, period: float, bounds=WORKSPACE_BOUN
 
 
 # ---------------------------------------------------------------------------------------------- #
-# Training bank: ~9 closed loops. Shared by train and play for now; a held-out EVAL_BANK can be
-# dropped in later by overriding ``CommandsCfg.trajectory.trajectories`` in the _PLAY config.
-# ---------------------------------------------------------------------------------------------- #
+# Trajectory banks.
+
+# TRAIN_BANK is made available during training
+# EVAL_BANK is used to test generalisation to unseen trajectories
+#
+
 TRAIN_BANK: list[Waypoints] = [
     # circles of varying radius / plane
     make_circle(center=(0.5, 0.0, 0.30), radius=0.12, period=5.0, normal=(0.0, 0.0, 1.0)),  # horizontal
-    # make_circle(center=(0.5, 0.0, 0.35), radius=0.15, period=7.0, normal=(0.0, 1.0, 0.0)),  # vertical (x-z)
-    # make_circle(center=(0.5, 0.0, 0.30), radius=0.10, period=4.0, normal=(1.0, 0.0, 1.0)),  # tilted
-    # # figure-of-eights
-    # make_figure8(center=(0.5, 0.0, 0.30), rx=0.14, ry=0.12, period=6.0, normal=(0.0, 0.0, 1.0)),
-    # make_figure8(center=(0.5, 0.0, 0.35), rx=0.13, ry=0.12, period=8.0, normal=(0.0, 1.0, 0.0)),
-    # # random closed loops (frozen via fixed seeds)
-    # make_random_loop(seed=0, n_pts=5, period=6.0),
-    # make_random_loop(seed=1, n_pts=6, period=7.0),
-    # make_random_loop(seed=2, n_pts=7, period=8.0),
-    # make_random_loop(seed=3, n_pts=6, period=5.0),
+    make_circle(center=(0.5, 0.0, 0.35), radius=0.15, period=7.0, normal=(0.0, 1.0, 0.0)),  # vertical (x-z)
+    make_circle(center=(0.5, 0.0, 0.30), radius=0.10, period=4.0, normal=(1.0, 0.0, 1.0)),  # tilted
+    # figure-of-eights
+    make_figure8(center=(0.5, 0.0, 0.30), rx=0.14, ry=0.12, period=6.0, normal=(0.0, 0.0, 1.0)),
+    make_figure8(center=(0.5, 0.0, 0.35), rx=0.13, ry=0.12, period=8.0, normal=(0.0, 1.0, 0.0)),
+    # random closed loops (frozen via fixed seeds)
+    make_random_loop(seed=0, n_pts=5, period=6.0),
+    make_random_loop(seed=1, n_pts=6, period=7.0),
+    make_random_loop(seed=2, n_pts=7, period=8.0),
+    make_random_loop(seed=3, n_pts=6, period=5.0),
 ]
+
+# Held-out evaluation bank: distinct centres / radii / planes / seeds, never trained on.
+EVAL_BANK: list[Waypoints] = [
+    make_circle(center=(0.5, 0.0, 0.35), radius=0.14, period=6.0, normal=(0.0, 0.0, 1.0)),  # horizontal
+    make_circle(center=(0.5, 0.0, 0.30), radius=0.12, period=6.0, normal=(1.0, 0.0, 0.0)),  # vertical (y-z)
+    make_figure8(center=(0.5, 0.0, 0.32), rx=0.12, ry=0.10, period=7.0, normal=(1.0, 0.0, 1.0)),  # tilted
+    make_random_loop(seed=10, n_pts=6, period=6.0),
+    make_random_loop(seed=11, n_pts=5, period=7.0),
+]
+
+
+def make_bank(split: str = "train", n: int | None = None) -> list[Waypoints]:
+    """Return a list of closed-loop trajectories for the requested ``split``.
+
+    ``split`` is ``"train"`` or ``"eval"``. ``n`` truncates to the first ``n`` loops (used by the
+    "performance vs number of training trajectories" study); ``None`` returns the whole bank.
+    """
+    bank = {"train": TRAIN_BANK, "eval": EVAL_BANK}.get(split)
+    if bank is None:
+        raise ValueError(f"unknown trajectory split {split!r}; expected 'train' or 'eval'")
+    if n is None:
+        return list(bank)
+    if not 1 <= n <= len(bank):
+        raise ValueError(f"n={n} out of range for split {split!r} (1..{len(bank)})")
+    return list(bank[:n])
