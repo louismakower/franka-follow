@@ -128,19 +128,6 @@ def main(env_cfg: ManagerBasedRLEnvCfg, agent_cfg):
     env = IsaacEnvWrapper(env, add_terminal_obs=True)
     runner = RLRunner(env, agent_cfg, log_dir=log_dir)
 
-    if args_cli.visualise:
-        if args_cli.task == "reach":
-            from grasp2grasp.tasks.manager_based.franka_reach.visualise import (
-                PPOValueVisualiser,
-                SACValueVisualiser,
-            )
-            # visualiser_cls = {"ppo": PPOValueVisualiser, "sac": SACValueVisualiser}.get(
-            #     agent_cfg.algo_name.lower()
-            # )
-            # env._visualisers.append(visualiser_cls(runner, env))
-        else:
-            print(f"[WARN] --visualise: no value visualiser for task={args_cli.task}")
-
     runner.learn()
     env.close()
 
