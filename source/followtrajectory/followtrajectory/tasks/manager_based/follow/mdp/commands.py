@@ -35,9 +35,10 @@ class TrajectoryCommand(CommandTerm):
             trajectories = make_bank(self.cfg.split, n)
         # fit each trajectory's cubic spline
         # pad every trajectory to a common length so the bank is a single (num_traj, max_len, 3)
-        pos_list, vel_list, lengths = [], [], []
+        pos_list, vel_list, lengths, wp_list = [], [], [], []
         for traj in trajectories:
             points = torch.tensor(traj)  # (num_waypoints, 4), keep on cpu for scipy
+            wp_list.append(points[:, :3].to(dtype=torch.float32))  # raw waypoints (root frame)
             t = points[:, 3]
             x, y, z = points[:, 0], points[:, 1], points[:, 2]
             cs_x = CubicSpline(t, x, bc_type=self.cfg.bc_type)
@@ -66,6 +67,14 @@ class TrajectoryCommand(CommandTerm):
         for i in range(self.num_traj):
             self.positions[i, : lengths[i]] = pos_list[i].to(self.device)
             self.velocities[i, : lengths[i]] = vel_list[i].to(self.device)
+
+        # pad raw waypoints the same way (counts differ per trajectory) for debug visualisation
+        wp_counts = [w.shape[0] for w in wp_list]
+        self.num_waypoints = torch.tensor(wp_counts, device=self.device, dtype=torch.long)  # (num_traj,)
+        max_wp = max(wp_counts)
+        self.waypoints = torch.zeros((self.num_traj, max_wp, 3), device=self.device)
+        for i in range(self.num_traj):
+            self.waypoints[i, : wp_counts[i]] = wp_list[i].to(self.device)
 
         self._command = torch.zeros((self.num_envs, self.cfg.future_length * 6), device=self.device)  # 3 pos, 3 vel
 
@@ -130,11 +139,20 @@ class TrajectoryCommand(CommandTerm):
                     marker_cfg.markers["sphere"].radius = min_radius + (max_radius - min_radius) * (future_point / self.cfg.future_length)
                     marker_cfg.markers["sphere"].visual_material.diffuse_color = (0.0, 1.0, 0.0)
                     self.goal_visualizer.append(VisualizationMarkers(marker_cfg))
+            if not hasattr(self, "waypoints_visualiser"):
+                waypoint_cfg = SPHERE_MARKER_CFG.replace(prim_path="/Visuals/Command/trajectory_waypoints")
+                waypoint_cfg.markers["sphere"].radius = 0.025
+                waypoint_cfg.markers["sphere"].visual_material.diffuse_color = (1.0, 0.0, 0.0)
+                self.waypoints_visualiser = VisualizationMarkers(waypoint_cfg)
             for vis in self.goal_visualizer:
                 vis.set_visibility(True)
-        elif hasattr(self, "goal_visualizer"):
-            for vis in self.goal_visualizer:
-                vis.set_visibility(False)
+            self.waypoints_visualiser.set_visibility(True)
+        else:
+            if hasattr(self, "goal_visualizer"):
+                for vis in self.goal_visualizer:
+                    vis.set_visibility(False)
+            if hasattr(self, "waypoints_visualiser"):
+                self.waypoints_visualiser.set_visibility(False)
 
     def _debug_vis_callback(self, event):
         # the robot may be de-initialized, in which case its data is unavailable
@@ -148,6 +166,16 @@ class TrajectoryCommand(CommandTerm):
                 self.robot.data.root_pos_w, self.robot.data.root_quat_w, self._command[:, start:stop]
             )
             self.goal_visualizer[vis].visualize(translations=goal_pos_w)
+
+        # waypoints of each env's assigned trajectory (root frame) -> world, dropping padding
+        wp = self.waypoints[self.traj_id]  # (num_envs, max_wp, 3)
+        num_envs, max_wp = wp.shape[0], wp.shape[1]
+        root_pos = self.robot.data.root_pos_w[:, None, :].expand(-1, max_wp, -1).reshape(-1, 3)
+        root_quat = self.robot.data.root_quat_w[:, None, :].expand(-1, max_wp, -1).reshape(-1, 4)
+        wp_w, _ = combine_frame_transforms(root_pos, root_quat, wp.reshape(-1, 3))
+        wp_w = wp_w.reshape(num_envs, max_wp, 3)
+        valid = torch.arange(max_wp, device=self.device)[None, :] < self.num_waypoints[self.traj_id][:, None]
+        self.waypoints_visualiser.visualize(translations=wp_w[valid])
 
 
 @configclass
