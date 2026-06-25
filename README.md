@@ -3,7 +3,7 @@
 Built on [Isaac Lab](https://isaac-sim.github.io/IsaacLab/) and my own
 [SAC](https://github.com/louismakower/louis_rl) agent.
 
-For methodology, results and videos, please see the [project page](https://louismakower.github.io/followtrajectory/).
+For methodology, results and videos, please see the [project page](https://louismakower.github.io/franka-follow/).
 
 ## Install
 
@@ -15,8 +15,8 @@ For methodology, results and videos, please see the [project page](https://louis
   SAC/PPO implementation):
 
     ```bash
-    git clone --recursive https://github.com/louismakower/followtrajectory.git
-    cd followtrajectory
+    git clone --recursive https://github.com/louismakower/franka-follow.git
+    cd franka-follow
     # if you already cloned without --recursive:
     git submodule update --init --recursive
     ```
