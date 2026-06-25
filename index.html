@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HUMANOID Challenge — Louis Makower</title>
+<meta name="description" content="Learning to control a robotic arm to track a desired end-effector trajectory with reinforcement learning." />
+
+<!-- KaTeX for inline math -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous" />
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+<style>
+  :root {
+    --bg:        #ffffff;
+    --bg-soft:   #f6f7f8;
+    --text:      #1d2228;
+    --muted:     #6b7280;
+    --border:    #e5e7eb;
+    --code-bg:   #f3f4f6;
+    --accent:    #2563eb;
+    --radius:    8px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:        #0f1216;
+      --bg-soft:   #161a20;
+      --text:      #dfe3e8;
+      --muted:     #98a0aa;
+      --border:    #262c34;
+      --code-bg:   #1a1f26;
+      --accent:    #7aa2f7;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    font-size: 17px;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  code, pre {
+    font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  }
+  code {
+    background: var(--code-bg);
+    padding: .12em .4em;
+    border-radius: 5px;
+    font-size: .88em;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    overflow-x: auto;
+    margin: 10px 0;
+  }
+  pre code { background: none; padding: 0; font-size: .9em; }
+
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+
+  /* Masthead */
+  .masthead { border-bottom: 1px solid var(--border); }
+  .masthead .wrap {
+    display: flex; align-items: baseline; gap: 12px;
+    padding-top: 22px; padding-bottom: 22px; flex-wrap: wrap;
+  }
+  .masthead .name { font-weight: 600; font-size: 1.02rem; }
+  .masthead .author { color: var(--muted); font-size: 1.02rem; }
+  .masthead .sub { color: var(--muted); font-size: .95rem; width: 100%; margin-top: 2px; }
+  .masthead .gh { margin-left: auto; font-size: .92rem; }
+
+  main { padding: 6px 0 64px; }
+  section { padding-top: 18px; }
+  h2 {
+    font-size: 1.5rem; font-weight: 700; letter-spacing: -.01em;
+    margin: 38px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border);
+  }
+  h3 { font-size: 1.18rem; font-weight: 600; margin: 30px 0 6px; }
+  p { margin: 12px 0; }
+  .lead { color: var(--muted); }
+
+  ul { padding-left: 1.3em; margin: 10px 0; }
+  li { margin: 5px 0; }
+  li > ul { margin: 3px 0; }
+
+  /* Spec groups */
+  .spec__label {
+    font-size: .8rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--muted); margin: 22px 0 2px;
+  }
+
+  /* Media placeholders */
+  .media {
+    margin: 18px 0; border: 1px dashed var(--border); border-radius: var(--radius);
+    background: var(--bg-soft); padding: 30px 18px; text-align: center;
+  }
+  .media__type {
+    display: block; font-size: .72rem; letter-spacing: .07em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 6px;
+  }
+  .media__caption { color: var(--muted); font-size: .95rem; }
+  .media__caption span { display: block; }
+  .media__caption .todo { font-family: ui-monospace, monospace; font-size: .85rem; }
+
+  /* Footer */
+  footer { border-top: 1px solid var(--border); }
+  footer .wrap {
+    padding-top: 22px; padding-bottom: 28px;
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    color: var(--muted); font-size: .92rem;
+  }
+
+  .katex { font-size: 1.03em; }
+
+  @media (max-width: 600px) {
+    .masthead .gh { margin-left: 0; width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Masthead -->
+<header class="masthead">
+  <div class="wrap">
+    <span class="name">HUMANOID Challenge</span>
+    <span class="author">Louis Makower</span>
+    <a class="gh" href="https://github.com/louismakower/followtrajectory" target="_blank" rel="noopener">GitHub</a>
+    <span class="sub">3D End-Effector Tracking</span>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+
+    <!-- Performance -->
+    <section id="performance">
+      <h2>Performance</h2>
+      <p>The robot is able to follow arbitrary trajectories supplied at test time, in the format of a list of $(x_i, y_i, z_i, t_i)$ points.  For example:</p>
+
+      <figure class="media">
+        <span class="media__type">Video</span>
+        <figcaption class="media__caption"><span class="todo">TODO: video</span></figcaption>
+      </figure>
+
+      <figure class="media">
+        <span class="media__type">Image</span>
+        <figcaption class="media__caption">image of 3D trajectories desired vs obtained</figcaption>
+      </figure>
+    </section>
+
+    <!-- Approach -->
+    <section id="approach">
+      <h2>Approach</h2>
+      <p class="lead">This section describes the design decisions, including trajectory and MDP design.</p>
+
+      <h3>Trajectory</h3>
+      <p>A trajectory is defined as a sequence of $(\textbf{r}, t)$ points. In this implementation, trajectories are always periodic with the starting point having a position vector equal to the end point.</p>
+      <p>On initialisation, the robot uses a cubic spline from <code>scipy</code> to interpolate between the provided waypoints. This interpolation produces a target position for every RL policy timestep.</p>
+      <p>Further, the analytic derivative of this spline is also calculated and used as a <strong>target velocity</strong>.  The target velocity helps to promote smoothness.</p>
+      <p>Cubic interpolation ensures smooth trajectories as gradients are matched at each point. You can play with seeing this cubic interpolation in the script <code>trajectories.py</code>.</p>
+      <p>See <a href="https://github.com/louismakower/followtrajectory/blob/main/source/followtrajectory/followtrajectory/tasks/manager_based/follow/mdp/trajectories.py" target="_blank" rel="noopener"><code>mdp/trajectories.py</code></a>
+        and <a href="https://github.com/louismakower/followtrajectory/blob/main/source/followtrajectory/followtrajectory/tasks/manager_based/follow/mdp/commands.py" target="_blank" rel="noopener"><code>mdp/commands.py</code></a>.</p>
+
+      <h3>MDP</h3>
+      <p>We use the Soft Actor-Critic algorithm for training, with 256 parallel environments in IsaacLab.  The policy and Q functions are parameterised as MLPs with hidden dimensions $[256, 256]$.</p>
+      <p>The control policy runs at 30Hz, with a simulator decimation of 2 (ie physics timesteps are 1/60s).</p>
+
+      <p class="spec__label">Observations</p>
+      <ul>
+        <li>Proprioception (joint position, joint velocities)
+          <ul><li>history length: 5</li></ul>
+        </li>
+        <li>Action history
+          <ul><li>history length: 5</li></ul>
+        </li>
+        <li>Future trajectory points
+          <ul><li>future length: 10 (ie the robot sees the 10 next target positions and velocities)</li></ul>
+        </li>
+      </ul>
+
+      <p class="spec__label">Actions</p>
+      <ul>
+        <li>Relative joint actions, with EMA smoothing. The update rule is:
+          <pre><code>targets = prev_targets + moving_average * actions</code></pre>
+          <ul><li>moving_average: 0.2</li></ul>
+        </li>
+      </ul>
+
+      <p>Using relative actions with smoothing showed <em>drastically</em> smoother and less jerky actions compared to predicting absolute joint angles.</p>
+
+      <figure class="media">
+        <span class="media__type">Chart</span>
+        <figcaption class="media__caption"><span class="todo">TODO: graph showing the above</span></figcaption>
+      </figure>
+
+      <p class="spec__label">Rewards</p>
+      <ul>
+        <li>Position error
+          <ul><li><code>−0.1 · ‖p − p*‖</code></li></ul>
+        </li>
+        <li>Fine grained position reward (saturates near the target)
+          <ul><li><code>+0.1 · (1 − tanh(‖p − p*‖ / 0.1))</code></li></ul>
+        </li>
+        <li>Velocity error (task the robot with <em>tracking</em> rather than just reaching)
+          <ul><li><code>−0.05 · ‖v − v*‖</code></li></ul>
+        </li>
+        <li>Fine grained velocity reward
+          <ul><li><code>+0.1 · (1 − tanh(‖v − v*‖ / 0.2))</code></li></ul>
+        </li>
+        <li>Joint velocity penalty
+          <ul><li><code>−0.007 · ‖q̇‖₁</code></li></ul>
+        </li>
+      </ul>
+
+      <p>The robot is rewarded for matching the target end-effector velocity and position. Matching velocity as well as position helps to produce smoother trajectories.</p>
+      <p>The joint velocity penalty is to encourage the robot to avoid pointless actions which don't contribute to trajectory tracking (eg rotating the hand), since the robot has 7 DoFs and so its joint angles are under-defined.</p>
+    </section>
+
+    <!-- Evaluation -->
+    <section id="evaluation">
+      <h2>Evaluation</h2>
+      <p>A set of pre-defined trajectories is used for training. These comprise circles, figures-of-eight and trajectories between randomly sampled points.</p>
+      <p>In line with test-train splits in supervised learning, the evaluation is then done on unseen test trajectories. We test whether the policy is general enough to perform on these unseen tasks.</p>
+      <p>To judge performance, for each time step we calculate the Euclidean distance between the target position and the achieved position. We then report the root mean squared error at each time step, and the integral over the entire trajectory.</p>
+      <p>Please see <a href="https://github.com/louismakower/followtrajectory/blob/main/scripts/louis_rl/eval.py" target="_blank" rel="noopener"><code>scripts/louis_rl/eval.py</code></a> for the implementation.</p>
+      <p>To evaluate the jitter or smoothness of the policies,:</p>
+
+      <figure class="media">
+        <span class="media__type">Chart</span>
+        <figcaption class="media__caption">
+          <span class="todo">TODO</span>
+          <span>something fourier?</span>
+        </figcaption>
+      </figure>
+    </section>
+
+    <!-- Robustness -->
+    <section id="robustness">
+      <h2>Robustness</h2>
+      <p>We explore the approach's robustness under several sources of uncertainty.</p>
+
+      <h3>Action noise</h3>
+      <p>We add Gaussian noise to the policy's actions, which is unobservable to the policy. The effect of this can be seen below</p>
+
+      <figure class="media">
+        <span class="media__type">Chart</span>
+        <figcaption class="media__caption"><span class="todo">TODO</span></figcaption>
+      </figure>
+
+      <h3>Action delay</h3>
+      <p>We delay the policy's actions by an integer number of timesteps to simulate control latency. We ablate whether action history helps the policy control for this.</p>
+
+      <figure class="media">
+        <span class="media__type">Chart</span>
+        <figcaption class="media__caption"><span class="todo">TODO</span></figcaption>
+      </figure>
+
+      <h3>Generalisation</h3>
+      <p>We also explore how many train-time trajectories are needed before the policy can generalise to unseen test-time trajectories.</p>
+
+      <figure class="media">
+        <span class="media__type">Chart</span>
+        <figcaption class="media__caption"><span class="todo">TODO</span></figcaption>
+      </figure>
+
+      <h3>Out of bounds</h3>
+      <p>We explore only within the Franka's reachable volume.</p>
+    </section>
+
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Louis Makower</span>
+    <a href="https://louismakower.github.io" target="_blank" rel="noopener">louismakower.github.io</a>
+  </div>
+</footer>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.renderMathInElement) {
+      renderMathInElement(document.body, {
+        delimiters: [
+          { left: '$$', right: '$$', display: true },
+          { left: '$',  right: '$',  display: false },
+          { left: '\\(', right: '\\)', display: false },
+          { left: '\\[', right: '\\]', display: true }
+        ],
+        ignoredTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'option'],
+        throwOnError: false
+      });
+    }
+  });
+</script>
+
+</body>
+</html>
