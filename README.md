@@ -1,135 +1,67 @@
-# Template for Isaac Lab Projects
+# HUMANOID Challenge
 
-## Overview
+Built on [Isaac Lab](https://isaac-sim.github.io/IsaacLab/) and my own
+[SAC](https://github.com/louismakower/louis_rl) agent.
 
-This project/repository serves as a template for building projects or extensions based on Isaac Lab.
-It allows you to develop in an isolated environment, outside of the core Isaac Lab repository.
+For methodology, results and videos, please see the [project page](https://louismakower.github.io/followtrajectory/).
 
-**Key Features:**
+## Install
 
-- `Isolation` Work outside the core Isaac Lab repository, ensuring that your development efforts remain self-contained.
-- `Flexibility` This template is set up to allow your code to be run as an extension in Omniverse.
+1. **Install IsaacLab** (and IsaacSim) as per the
+   [guide](https://isaac-sim.github.io/IsaacLab/main/source/setup/installation/index.html).
+   This repo assumes IsaacLab's Python (a conda/venv with `isaaclab` importable).
 
-**Keywords:** extension, template, isaaclab
-
-## Installation
-
-- Install Isaac Lab by following the [installation guide](https://isaac-sim.github.io/IsaacLab/main/source/setup/installation/index.html).
-  We recommend using the conda or uv installation as it simplifies calling Python scripts from the terminal.
-
-- Clone or copy this project/repository separately from the Isaac Lab installation (i.e. outside the `IsaacLab` directory):
-
-- Using a python interpreter that has Isaac Lab installed, install the library in editable mode using:
+2. **Clone this repo with submodules** (the [`louis_rl`](https://github.com/louismakower/louis_rl)
+  SAC/PPO implementation):
 
     ```bash
-    # use 'PATH_TO_isaaclab.sh|bat -p' instead of 'python' if Isaac Lab is not installed in Python venv or conda
-    python -m pip install -e source/followtrajectory
+    git clone --recursive https://github.com/<you>/followtrajectory.git
+    cd followtrajectory
+    # if you already cloned without --recursive:
+    git submodule update --init --recursive
+    ```
 
-- Verify that the extension is correctly installed by:
+3. **Install the extension and the RL library** (editable) into Isaac Lab's Python:
 
-    - Listing the available tasks:
+   ```bash
+   python -m pip install -e source/followtrajectory
+   python -m pip install -e louis_rl
+   ```
 
-        Note: It the task name changes, it may be necessary to update the search pattern `"Template-"`
-        (in the `scripts/list_envs.py` file) so that it can be listed.
+## Run
 
-        ```bash
-        # use 'FULL_PATH_TO_isaaclab.sh|bat -p' instead of 'python' if Isaac Lab is not installed in Python venv or conda
-        python scripts/list_envs.py
-        ```
+Train the SAC agent:
 
-    - Running a task:
+`python scripts/louis_rl/train.py --agent sac --task follow --num_envs 512 --headless`
 
-        ```bash
-        # use 'FULL_PATH_TO_isaaclab.sh|bat -p' instead of 'python' if Isaac Lab is not installed in Python venv or conda
-        python scripts/<RL_LIBRARY>/train.py --task=<TASK_NAME>
-        ```
+See the trained agent run live:
 
-    - Running a task with dummy agents:
+`python scripts/louis_rl/play.py --agent sac --task follow --num_envs 8 --checkpoint /path/to/checkpoint`
 
-        These include dummy agents that output zero or random agents. They are useful to ensure that the environments are configured correctly.
+See a trained agent run live:
 
-        - Zero-action agent
+`python scripts/louis_rl/play.py --agent sac --task follow --num_envs 8 --checkpoint TODO`
 
-            ```bash
-            # use 'FULL_PATH_TO_isaaclab.sh|bat -p' instead of 'python' if Isaac Lab is not installed in Python venv or conda
-            python scripts/zero_agent.py --task=<TASK_NAME>
-            ```
-        - Random-action agent
+Create a custom trajectory, and see the robot trace it out
 
-            ```bash
-            # use 'FULL_PATH_TO_isaaclab.sh|bat -p' instead of 'python' if Isaac Lab is not installed in Python venv or conda
-            python scripts/random_agent.py --task=<TASK_NAME>
-            ```
+1. First, define your trajectory as a sequence of $(x_i, y_i, z_i, t_ i)$ points in [custom_trajectory.py](TODO/path/to/custom_trajectory.py).
+2. Then run a pretrained agent on your trajectory:
 
-### Set up IDE (Optional)
+     `python scripts/louis_rl/play.py --agent sac --task follow --num_envs 8 --checkpoint /path/to/checkpoint --custom_trajectory`
 
-To setup the IDE, please follow these instructions:
-
-- Run VSCode Tasks, by pressing `Ctrl+Shift+P`, selecting `Tasks: Run Task` and running the `setup_python_env` in the drop down menu.
-  When running this task, you will be prompted to add the absolute path to your Isaac Sim installation.
-
-If everything executes correctly, it should create a file .python.env in the `.vscode` directory.
-The file contains the python paths to all the extensions provided by Isaac Sim and Omniverse.
-This helps in indexing all the python modules for intelligent suggestions while writing code.
-
-### Setup as Omniverse Extension (Optional)
-
-We provide an example UI extension that will load upon enabling your extension defined in `source/followtrajectory/followtrajectory/ui_extension_example.py`.
-
-To enable your extension, follow these steps:
-
-1. **Add the search path of this project/repository** to the extension manager:
-    - Navigate to the extension manager using `Window` -> `Extensions`.
-    - Click on the **Hamburger Icon**, then go to `Settings`.
-    - In the `Extension Search Paths`, enter the absolute path to the `source` directory of this project/repository.
-    - If not already present, in the `Extension Search Paths`, enter the path that leads to Isaac Lab's extension directory directory (`IsaacLab/source`)
-    - Click on the **Hamburger Icon**, then click `Refresh`.
-
-2. **Search and enable your extension**:
-    - Find your extension under the `Third Party` category.
-    - Toggle it to enable your extension.
-
-## Code formatting
-
-We have a pre-commit template to automatically format your code.
-To install pre-commit:
+## Repository layout
 
 ```bash
-pip install pre-commit
-```
-
-Then you can run pre-commit with:
-
-```bash
-pre-commit run --all-files
-```
-
-## Troubleshooting
-
-### Pylance Missing Indexing of Extensions
-
-In some VsCode versions, the indexing of part of the extensions is missing.
-In this case, add the path to your extension in `.vscode/settings.json` under the key `"python.analysis.extraPaths"`.
-
-```json
-{
-    "python.analysis.extraPaths": [
-        "<path-to-ext-repo>/source/followtrajectory"
-    ]
-}
-```
-
-### Pylance Crash
-
-If you encounter a crash in `pylance`, it is probable that too many files are indexed and you run out of memory.
-A possible solution is to exclude some of omniverse packages that are not used in your project.
-To do so, modify `.vscode/settings.json` and comment out packages under the key `"python.analysis.extraPaths"`
-Some examples of packages that can likely be excluded are:
-
-```json
-"<path-to-isaac-sim>/extscache/omni.anim.*"         // Animation packages
-"<path-to-isaac-sim>/extscache/omni.kit.*"          // Kit UI tools
-"<path-to-isaac-sim>/extscache/omni.graph.*"        // Graph UI tools
-"<path-to-isaac-sim>/extscache/omni.services.*"     // Services tools
-...
+source/followtrajectory/.../tasks/manager_based/follow/
+  follow_env_cfg.py  # scene, observations, rewards, terminations, env settings
+  config/franka/  # Franka robot binding + SAC/PPO agent configs + gym registration
+  mdp/
+    trajectories.py  # trajectory generators + TRAIN/EVAL banks + make_bank() factory
+    commands.py  # TrajectoryCommand: spline fit, look-ahead, deterministic eval
+    actions.py  # SmoothedJointPositionAction: EMA smoothing, noise, control delay
+    rewards.py  # position/velocity tracking reward terms
+scripts/louis_rl/
+  train.py  play.py  eval.py  # train / visualise / evaluate
+  run_study.py  plot_study.py  # multi-seed studies + aggregation plots
+louis_rl/  # git submodule: SAC/PPO implementation
 ```
