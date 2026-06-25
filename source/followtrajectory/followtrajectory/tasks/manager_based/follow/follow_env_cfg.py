@@ -75,7 +75,11 @@ class CommandsCfg:
         # disabled timer
         resampling_time_range=(1.0e9, 1.0e9),
         debug_vis=True,  # draw a marker at the current tracking point
-        trajectories=mdp.TRAIN_BANK,
+        # bank built from the held-out-aware factory; override split/num_trajectories via Hydra,
+        # e.g. `env.commands.trajectory.num_trajectories=3` for the data-scaling study.
+        trajectories=None,
+        split="train",
+        num_trajectories=0,  # 0 = all training loops
         bc_type="periodic",
         future_length=10,  # number of future targets exposed in the observation (look-ahead)
     )
@@ -95,15 +99,25 @@ class ObservationsCfg:
 
     @configclass
     class PolicyCfg(ObsGroup):
-        """Observations for policy group."""
+        """Proprioceptive observations (joint state)."""
 
         # observation terms (order preserved)
-        joint_pos = ObsTerm(func=mdp.joint_pos_rel, noise=Unoise(n_min=-0.01, n_max=0.01))
-        joint_vel = ObsTerm(func=mdp.joint_vel_rel, noise=Unoise(n_min=-0.01, n_max=0.01))
+        joint_pos = ObsTerm(func=mdp.joint_pos_rel)
+        joint_vel = ObsTerm(func=mdp.joint_vel_rel)
+
+        def __post_init__(self):
+            self.enable_corruption = False
+            self.concatenate_terms = True
+            self.history_length = 5
+
+    @configclass
+    class ActionObsCfg(ObsGroup):
+        """Have commanded actions, in their own group so the action-history length can be ablated independently"""
+
         actions = ObsTerm(func=mdp.last_action)
 
         def __post_init__(self):
-            self.enable_corruption = True
+            self.enable_corruption = False
             self.concatenate_terms = True
             self.history_length = 5
 
@@ -118,6 +132,7 @@ class ObservationsCfg:
 
     # observation groups
     policy: PolicyCfg = PolicyCfg()
+    policy_action_obs: ActionObsCfg = ActionObsCfg()
     policy_command_obs: CommandObsCfg = CommandObsCfg()
 
 
