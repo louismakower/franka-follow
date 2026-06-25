@@ -135,7 +135,7 @@
   <div class="wrap">
     <span class="name">HUMANOID Challenge</span>
     <span class="author">Louis Makower</span>
-    <a class="gh" href="https://github.com/louismakower/followtrajectory" target="_blank" rel="noopener">GitHub</a>
+    <a class="gh" href="https://github.com/louismakower/franka-follow" target="_blank" rel="noopener">GitHub</a>
     <span class="sub">3D End-Effector Tracking</span>
   </div>
 </header>
@@ -169,8 +169,8 @@
       <p>On initialisation, the robot uses a cubic spline from <code>scipy</code> to interpolate between the provided waypoints. This interpolation produces a target position for every RL policy timestep.</p>
       <p>Further, the analytic derivative of this spline is also calculated and used as a <strong>target velocity</strong>.  The target velocity helps to promote smoothness.</p>
       <p>Cubic interpolation ensures smooth trajectories as gradients are matched at each point. You can play with seeing this cubic interpolation in the script <code>trajectories.py</code>.</p>
-      <p>See <a href="https://github.com/louismakower/followtrajectory/blob/main/source/followtrajectory/followtrajectory/tasks/manager_based/follow/mdp/trajectories.py" target="_blank" rel="noopener"><code>mdp/trajectories.py</code></a>
-        and <a href="https://github.com/louismakower/followtrajectory/blob/main/source/followtrajectory/followtrajectory/tasks/manager_based/follow/mdp/commands.py" target="_blank" rel="noopener"><code>mdp/commands.py</code></a>.</p>
+      <p>See <a href="https://github.com/louismakower/franka-follow/blob/main/source/franka-follow/franka-follow/tasks/manager_based/follow/mdp/trajectories.py" target="_blank" rel="noopener"><code>mdp/trajectories.py</code></a>
+        and <a href="https://github.com/louismakower/franka-follow/blob/main/source/franka-follow/franka-follow/tasks/manager_based/follow/mdp/commands.py" target="_blank" rel="noopener"><code>mdp/commands.py</code></a>.</p>
 
       <h3>MDP</h3>
       <p>We use the Soft Actor-Critic algorithm for training, with 256 parallel environments in IsaacLab.  The policy and Q functions are parameterised as MLPs with hidden dimensions $[256, 256]$.</p>
@@ -233,7 +233,7 @@
       <p>A set of pre-defined trajectories is used for training. These comprise circles, figures-of-eight and trajectories between randomly sampled points.</p>
       <p>In line with test-train splits in supervised learning, the evaluation is then done on unseen test trajectories. We test whether the policy is general enough to perform on these unseen tasks.</p>
       <p>To judge performance, for each time step we calculate the Euclidean distance between the target position and the achieved position. We then report the root mean squared error at each time step, and the integral over the entire trajectory.</p>
-      <p>Please see <a href="https://github.com/louismakower/followtrajectory/blob/main/scripts/louis_rl/eval.py" target="_blank" rel="noopener"><code>scripts/louis_rl/eval.py</code></a> for the implementation.</p>
+      <p>Please see <a href="https://github.com/louismakower/franka-follow/blob/main/scripts/louis_rl/eval.py" target="_blank" rel="noopener"><code>scripts/louis_rl/eval.py</code></a> for the implementation.</p>
       <p>To evaluate the jitter or smoothness of the policies,:</p>
 
       <figure class="media">

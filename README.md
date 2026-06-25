@@ -15,7 +15,7 @@ For methodology, results and videos, please see the [project page](https://louis
   SAC/PPO implementation):
 
     ```bash
-    git clone --recursive https://github.com/<you>/followtrajectory.git
+    git clone --recursive https://github.com/louismakower/followtrajectory.git
     cd followtrajectory
     # if you already cloned without --recursive:
     git submodule update --init --recursive
@@ -32,7 +32,7 @@ For methodology, results and videos, please see the [project page](https://louis
 
 Train the SAC agent:
 
-`python scripts/louis_rl/train.py --agent sac --task follow --num_envs 512 --headless`
+`python scripts/louis_rl/train.py --agent sac --task follow --num_envs 256 --headless`
 
 See the trained agent run live:
 
