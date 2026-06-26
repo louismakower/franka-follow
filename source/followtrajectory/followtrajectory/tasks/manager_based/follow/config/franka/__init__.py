@@ -30,6 +30,20 @@ gym.register(
 )
 
 gym.register(
+    id="follow-absolute",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": f"{__name__}.franka_follow_env_cfg:FrankaFollowAbsoluteEnvCfg",
+        "rl_games_cfg_entry_point": f"{agents.__name__}:rl_games_ppo_cfg.yaml",
+        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:FrankaReachPPORunnerCfg",
+        "skrl_cfg_entry_point": f"{agents.__name__}:skrl_ppo_cfg.yaml",
+        "louis_rl_ppo_cfg_entry_point": f"{agents.__name__}.louis_rl_ppo_cfg:FrankaReachPPOCfg",
+        "louis_rl_sac_cfg_entry_point": f"{agents.__name__}.louis_rl_sac_cfg:FrankaReachSACCfg",
+    },
+)
+
+gym.register(
     id="follow-play",
     entry_point="isaaclab.envs:ManagerBasedRLEnv",
     disable_env_checker=True,
@@ -38,5 +52,7 @@ gym.register(
         "rl_games_cfg_entry_point": f"{agents.__name__}:rl_games_ppo_cfg.yaml",
         "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:FrankaReachPPORunnerCfg",
         "skrl_cfg_entry_point": f"{agents.__name__}:skrl_ppo_cfg.yaml",
+        "louis_rl_ppo_cfg_entry_point": f"{agents.__name__}.louis_rl_ppo_cfg:FrankaReachPPOCfg",
+        "louis_rl_sac_cfg_entry_point": f"{agents.__name__}.louis_rl_sac_cfg:FrankaReachSACCfg",
     },
 )

@@ -264,6 +264,8 @@
         </figcaption>
       </figure>
 
+      <p>Averaged over the five held-out trajectories, the policy (trained without action noise) tracks the target end-effector path to $8.0\,\text{mm}$ RMSE with a mean jitter of $0.20\,\text{m/s}^2$.</p>
+
       <p>In the rest of this page, I describe trajectories with interactive 3D plots rather than rendered videos. Drag to rotate, scroll to zoom.</p>
 
       <!-- Interactive 3D viewer. `data-trajectories` scopes the dropdown to specific trajectories;
@@ -313,39 +315,42 @@
         <li>Action history
         </li>
         <li>Target trajectory
-          <ul><li>The robot observes the 10 next target positions and velocities, according to the spline.</li></ul>
-          <ul><li>This observation is excluded from the history length.</li></ul>
+          <ul>
+            <li>The robot observes the 10 next target positions and velocities, according to the spline.</li>
+            <li>This observation is excluded from the history length.</li>
+          </ul>
         </li>
       </ul>
 
       <p class="spec__label">Actions</p>
       <ul>
         <li>Relative joint actions, with EMA smoothing. The update rule is:
-          <pre><code>targets = prev_targets + moving_average * actions</code></pre>
+          $$\text{targets} = \text{prev\_targets} + \text{moving\_average} \cdot \text{actions}$$
           <ul><li>Moving average: 0.2</li></ul>
         </li>
       </ul>
 
       <p>Using relative actions with smoothing showed <em>drastically</em> smoother and less jerky
-        actions compared to predicting absolute joint angles (see later).
+        actions compared to predicting absolute joint angles (see <a href="#absolute-vs-relative">Are relative actions better?</a>).
+        </p>
 
 
       <p class="spec__label">Rewards</p>
       <ul>
         <li>Position error
-          <ul><li><code>−0.1 · ‖p − p*‖</code></li></ul>
+          <ul><li>$-0.1 \cdot \lVert p - p^* \rVert$</li></ul>
         </li>
         <li>Fine grained position reward
-          <ul><li><code>+0.1 · (1 − tanh(‖p − p*‖ / 0.1))</code></li></ul>
+          <ul><li>$+0.1 \cdot (1 - \tanh(\lVert p - p^* \rVert / 0.1))$</li></ul>
         </li>
         <li>Velocity error
-          <ul><li><code>−0.05 · ‖v − v*‖</code></li></ul>
+          <ul><li>$-0.05 \cdot \lVert v - v^* \rVert$</li></ul>
         </li>
         <li>Fine grained velocity reward
-          <ul><li><code>+0.1 · (1 − tanh(‖v − v*‖ / 0.2))</code></li></ul>
+          <ul><li>$+0.1 \cdot (1 - \tanh(\lVert v - v^* \rVert / 0.2))$</li></ul>
         </li>
         <li>Joint velocity penalty
-          <ul><li><code>−0.007 · ‖q̇‖₁</code></li></ul>
+          <ul><li>$-0.007 \cdot \lVert \dot{q} \rVert_1$</li></ul>
         </li>
       </ul>
 
@@ -357,12 +362,12 @@
     <section id="evaluation">
       <h2>Evaluation</h2>
       <p>A set of pre-defined trajectories is used for training. These comprise circles, figures-of-eight and trajectories between randomly sampled points.</p>
-      <p>In line with test-train splits in supervised learning, the evaluation is then done on unseen test trajectories. We test whether the policy is general enough to perform on these unseen tasks.</p>
-      <p>To judge <b>tracking performance</b>, for each time step we calculate the Euclidean distance between the target position and the achieved position. We then report its root mean square over timesteps.</p>
-      <p>To evaluate the <b>jitter</b> of the policies, we report the average absolute acceleration over timesteps.</p>
+      <p>In line with test-train splits in supervised learning, the evaluation is then done on unseen test trajectories. I test whether the policy is general enough to perform on these unseen tasks.</p>
+      <p>To judge <b>tracking performance</b>, for each time step I calculate the Euclidean distance between the target position and the achieved position. I then report its root mean square over timesteps.</p>
+      <p>To evaluate the <b>jitter</b> of the policies, I report the average absolute acceleration over timesteps.</p>
 
     </section>
-    <section id="aboslute-vs-relative>">
+    <section id="absolute-vs-relative">
       <h3>Are relative actions better?</h3>
       <p>Below are tracking and jitter metrics and trajectories for a policy trained with relative joint angle actions vs one trained to output absolute joint targets.</p>
       <!-- Interactive bar chart: trajectory dropdown + paired RMSE / EE-acceleration bars comparing the
@@ -375,8 +380,10 @@
 
     <section>
       <h3>How many train trajectories are needed to generalise?</h3>
-      <ul><li>I also explore limiting the number of trajectories seen during training, and see what effec this has on tracking unseen test time trajectories.</li></ul>
-      <ul><li>Training on a single trajectory overfits badly, but test-error reduces sharply once the policy sees >3 train trajectories.</li></ul>
+      <ul>
+        <li>I also explore limiting the number of trajectories seen during training, and see what effect this has on tracking unseen test time trajectories.</li>
+        <li>Training on a single trajectory overfits badly, but test-error reduces sharply once the policy sees >3 train trajectories.</li>
+      </ul>
 
       <!-- Interactive 3D viewer with a trajectory dropdown + a single training-set-size slider (reuses
            the noise-grid widget in 1-D mode; axis labels come from meta.axes, meta.single1d hides the
@@ -388,31 +395,39 @@
     <!-- Robustness -->
     <section id="robustness">
       <h2>Robustness</h2>
-      <p>We explore the approach's robustness under several sources of uncertainty.</p>
+      <p>I explore the approach's robustness under several sources of uncertainty.</p>
 
       <h3>Action noise</h3>
-      <ul><li>We explore adding Gaussian noise to the actions.</li></ul>
-      <ul><li>This noise is unobservable to the policy.</li></ul>
-      <ul><li>We ablate the result of adding this noise at <b>train</b> and <b>test</b> time independently.</li></ul>
-      <ul><li>You can toggle how much noise was added during each stage in the interactive figure below.</li></ul>
+      <ul>
+        <li>I explore adding Gaussian noise to the actions.</li>
+        <li>This noise is unobservable to the policy.</li>
+        <li>I ablate the result of adding this noise at <b>train</b> and <b>test</b> time independently.</li>
+        <li>You can toggle how much noise was added during each stage in the interactive figure below.</li>
+      </ul>
       
       
       <!-- Interactive 3D viewer with a trajectory dropdown + train/eval noise sliders.
       Data: webpage-data/noise-grid.json (built by scripts/export_noise_grid.py). -->
       <div class="noisegrid" data-src="webpage-data/noise-grid.json" data-default="2"></div>
-      <ul><li>Test time noise makes trajectories deviate further from their plan</li></ul>
-      <ul><li>Training with noise makes the policy better able to adapt to noise at test time, but harms performance in the absense of noise.</li></ul>
+      <ul>
+        <li>Test time noise makes trajectories deviate further from their plan</li>
+        <li>Training with noise makes the policy better able to adapt to noise at test time, but harms performance in the absence of noise.</li>
+      </ul>
 
       <h3>Action delay</h3>
-      <ul><li>I delay the policy's actions by an integer number of timesteps to simulate control latency.</li></ul>
-      <ul><li>I ablate whether feeding the policy its action history for several timesteps lets it adapt to this delay.</li></ul>
+      <ul>
+        <li>I delay the policy's actions by an integer number of timesteps to simulate control latency.</li>
+        <li>I ablate whether feeding the policy its action history for several timesteps lets it adapt to this delay.</li>
+      </ul>
 
       <!-- Interactive 3D viewer with a trajectory dropdown + delay/history sliders (reuses the
            noise-grid widget; axis labels come from meta.axes).
            Data: webpage-data/delay-grid.json (built by scripts/export_delay_grid.py). -->
       <div class="noisegrid" data-src="webpage-data/delay-grid.json" data-default="2"></div>
-      <ul><li>Without an action delay, the action history has a small effect on the trajectory accuracy.</li></ul>
-      <ul><li>However, with delayed actions, action history is critical. Without it, the policy cannot know the actions already outputted, and so we see very high error.</li></ul>
+      <ul>
+        <li>Without an action delay, the action history has a small effect on the trajectory accuracy.</li>
+        <li>However, with delayed actions, action history is critical. Without it, the policy cannot know the actions already outputted, and so we see very high error.</li>
+      </ul>
 
       <h3>Out of bounds</h3>
       <p>Targets are sampled within the Franka's reachable volume, so waypoints are always reachable.</p>
