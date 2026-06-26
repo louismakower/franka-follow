@@ -1,6 +1,6 @@
 """Run a multi-seed experiment study: train a grid of configs, evaluate each on the held-out bank.
 
-Three studies, matching the report's robustness/generalisation analyses:
+Four studies, matching the report's robustness/generalisation analyses:
 
   * ``data_scaling`` — vary the number of *training* trajectories; eval on the fixed held-out bank.
                        Answers "how many demo shapes does the policy need to generalise?".
@@ -8,6 +8,10 @@ Three studies, matching the report's robustness/generalisation analyses:
                        Answers "how does tracking degrade as disturbance grows?".
   * ``delay``        — grid of control delay x action-history length. Tests whether observing the
                        action history lets the policy compensate for control latency.
+  * ``action_smoothing`` — trains absolute joint-position control (the ``follow-absolute`` task: the
+                       action is rescaled directly onto the joint limits each step). The relative/EMA
+                       baseline (default ``moving_average=0.2``) is NOT retrained — reuse the
+                       ``noise`` study's noise=0 run, which is that same controller at zero noise.
 
 For every (config, seed) it launches ``train.py`` then ``eval.py`` and appends the eval metrics to
 ``logs/studies/<study>/results.json`` (written incrementally so a crash is resumable). Plot the
@@ -34,28 +38,41 @@ LOG_ROOT = os.path.join("logs", "louis_rl")  # train.py logs here under <experim
 
 # Per-study grids. Each entry is a dict of Hydra overrides describing one cell of the grid; the
 # values are applied to BOTH training and evaluation (eval forces the held-out split internally, so
-# the num_trajectories override is harmless there).
+# the num_trajectories override is harmless there). The reserved key ``_task`` (not a Hydra
+# override) selects a different gym task for that cell instead of the default ``follow``.
 STUDIES = {
     "data_scaling": [
-        {"env.commands.trajectory.num_trajectories": n} for n in (1, 2, 3, 5, 7, 9)
+        {"env.commands.trajectory.num_trajectories": n} for n in (2, 3, 5, 7, 9)
     ],
     "noise": [
         {"env.actions.arm_action.noise_std": s} for s in (0.0, 0.02, 0.05, 0.1, 0.2)
     ],
     "delay": [
         {"env.actions.arm_action.delay_steps": d, "env.observations.policy_action_obs.history_length": h}
-        for d, h in itertools.product((0, 2, 4), (5, 1))
+        for d, h in itertools.product((0, 2, 4), (1, 5))
+    ],
+    # Only the absolute-control arm is trained here; for the relative MA=0.2 baseline reuse the
+    # ``noise`` study's noise=0 run (the identical default controller at zero actuation noise).
+    "action_smoothing": [
+        {"_task": "follow-absolute"},                      # absolute limit-rescaled position control
     ],
 }
 
 
+def _hydra_items(cell: dict) -> dict:
+    """Cell entries that are Hydra overrides (reserved control keys start with ``_``)."""
+    return {k: v for k, v in cell.items() if not k.startswith("_")}
+
+
 def _run_name(study: str, cell: dict, seed: int) -> str:
-    parts = [f"{k.split('.')[-1]}-{v}" for k, v in cell.items()]
+    parts = [f"{k.split('.')[-1]}-{v}" for k, v in _hydra_items(cell).items()]
+    if "_task" in cell:
+        parts.insert(0, f"task-{cell['_task']}")
     return f"{study}__{'_'.join(parts)}__seed{seed}"
 
 
 def _overrides(cell: dict) -> list[str]:
-    return [f"{k}={v}" for k, v in cell.items()]
+    return [f"{k}={v}" for k, v in _hydra_items(cell).items()]
 
 
 def _latest_checkpoint(experiment_name: str) -> str | None:
@@ -100,11 +117,12 @@ def main():
             print(f"[study] ({i+1}/{len(jobs)}) skip existing {run}")
             continue
         experiment_name = f"study_{run}"
+        task = cell.get("_task", TASK)
         print(f"\n{'='*70}\n[study] ({i+1}/{len(jobs)}) {run}\n{'='*70}", flush=True)
 
         # ---- train -------------------------------------------------------------------------
         train_cmd = [
-            sys.executable, "scripts/louis_rl/train.py", "--task", TASK, "--agent", AGENT,
+            sys.executable, "scripts/louis_rl/train.py", "--task", task, "--agent", AGENT,
             "--num_envs", str(args.num_envs), "--seed", str(seed), *passthrough,
             f"agent.experiment_name={experiment_name}", f"agent.max_steps={args.max_steps}",
             *_overrides(cell),
@@ -120,7 +138,7 @@ def main():
 
         # ---- eval (same system params; eval.py forces the held-out split internally) --------
         eval_cmd = [
-            sys.executable, "scripts/louis_rl/eval.py", "--task", TASK, "--agent", AGENT,
+            sys.executable, "scripts/louis_rl/eval.py", "--task", task, "--agent", AGENT,
             "--checkpoint", ckpt, "--out_dir", os.path.join(study_dir, "eval"), "--tag", run,
             *passthrough, *_overrides(cell),
         ]

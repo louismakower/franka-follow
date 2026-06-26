@@ -38,6 +38,24 @@ class FrankaFollowEnvCfg(FollowEnvCfg):
             asset_name="robot", joint_names=["panda_joint.*"], moving_average=0.2
         )
 
+
+@configclass
+class FrankaFollowAbsoluteEnvCfg(FrankaFollowEnvCfg):
+    """Absolute joint-position control baseline.
+
+    Identical to :class:`FrankaFollowEnvCfg` except the action parameterisation: the policy
+    commands target joint positions *directly* — each action in [-1, 1] is rescaled onto the
+    joint's limits, with no incremental accumulation or EMA smoothing. Used as the absolute-control
+    arm of the ``action_smoothing`` study, against the relative ``SmoothedJointPositionAction``.
+    """
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.actions.arm_action = mdp.JointPositionToLimitsActionCfg(
+            asset_name="robot", joint_names=["panda_joint.*"], scale=1.0, rescale_to_limits=True
+        )
+
+
 @configclass
 class FrankaFollowEnvCfg_PLAY(FrankaFollowEnvCfg):
     def __post_init__(self):

@@ -1,9 +1,9 @@
+# HUMANOID Challenge
 <h2 align="center">
   📺 For methodology, results &amp; videos, see the
   <a href="https://louismakower.github.io/franka-follow/">PROJECT PAGE →</a>
 </h2>
 
-# HUMANOID Challenge
 
 Built on [Isaac Lab](https://isaac-sim.github.io/IsaacLab/) and my own
 [SAC](https://github.com/louismakower/louis_rl) agent.
