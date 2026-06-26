@@ -50,11 +50,12 @@ def main():
 
     # count of environments
     index = 0
-    # acquire all Isaac environments names
+    # acquire the environments registered by this extension (config lives in `followtrajectory`)
     for task_spec in gym.registry.values():
-        if "Template-" in task_spec.id and (args_cli.keyword is None or args_cli.keyword in task_spec.id):
+        cfg_entry = (task_spec.kwargs or {}).get("env_cfg_entry_point", "")
+        if "followtrajectory" in cfg_entry and (args_cli.keyword is None or args_cli.keyword in task_spec.id):
             # add details to table
-            table.add_row([index + 1, task_spec.id, task_spec.entry_point, task_spec.kwargs["env_cfg_entry_point"]])
+            table.add_row([index + 1, task_spec.id, task_spec.entry_point, cfg_entry])
             # increment count
             index += 1
 

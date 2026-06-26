@@ -1,4 +1,4 @@
-# HUMANOID Challenge
+# End-Effector Tracking
 <h2 align="center">
   📺 For methodology, results &amp; videos, see the
   <a href="https://louismakower.github.io/franka-follow/">PROJECT PAGE →</a>
@@ -40,18 +40,8 @@ Train the SAC agent:
 
 See the trained agent run live:
 
-`python scripts/louis_rl/play.py --agent sac --task follow --num_envs 8 --checkpoint /path/to/checkpoint`
+`python scripts/louis_rl/play.py --agent sac --task follow --num_envs 8 --checkpoint pretrained-checkpoint.pth --hide_hand`
 
-See a trained agent run live:
-
-`python scripts/louis_rl/play.py --agent sac --task follow --num_envs 8 --checkpoint TODO`
-
-Create a custom trajectory, and see the robot trace it out
-
-1. First, define your trajectory as a sequence of $(x_i, y_i, z_i, t_ i)$ points in [custom_trajectory.py](TODO/path/to/custom_trajectory.py).
-2. Then run a pretrained agent on your trajectory:
-
-     `python scripts/louis_rl/play.py --agent sac --task follow --num_envs 8 --checkpoint /path/to/checkpoint --custom_trajectory`
 
 ## Repository layout
 

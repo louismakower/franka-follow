@@ -129,28 +129,14 @@ class TrajectoryCommand(CommandTerm):
 
     def _set_debug_vis_impl(self, debug_vis: bool):
         # create the marker the first time visualization is enabled
-        max_radius = 0.025
-        min_radius = 0.0025
         if debug_vis:
-            if not hasattr(self, "goal_visualizer"):
-                self.goal_visualizer = []
-                for future_point in range(self.cfg.future_length):
-                    marker_cfg = SPHERE_MARKER_CFG.replace(prim_path=f"/Visuals/Command/trajectory_goal_{future_point}")
-                    marker_cfg.markers["sphere"].radius = min_radius + (max_radius - min_radius) * (future_point / self.cfg.future_length)
-                    marker_cfg.markers["sphere"].visual_material.diffuse_color = (0.0, 1.0, 0.0)
-                    self.goal_visualizer.append(VisualizationMarkers(marker_cfg))
             if not hasattr(self, "waypoints_visualiser"):
                 waypoint_cfg = SPHERE_MARKER_CFG.replace(prim_path="/Visuals/Command/trajectory_waypoints")
-                waypoint_cfg.markers["sphere"].radius = 0.025
-                waypoint_cfg.markers["sphere"].visual_material.diffuse_color = (1.0, 0.0, 0.0)
+                waypoint_cfg.markers["sphere"].radius = 0.01
+                waypoint_cfg.markers["sphere"].visual_material.diffuse_color = (0.0, 1.0, 0.0)
                 self.waypoints_visualiser = VisualizationMarkers(waypoint_cfg)
-            for vis in self.goal_visualizer:
-                vis.set_visibility(True)
             self.waypoints_visualiser.set_visibility(True)
         else:
-            if hasattr(self, "goal_visualizer"):
-                for vis in self.goal_visualizer:
-                    vis.set_visibility(False)
             if hasattr(self, "waypoints_visualiser"):
                 self.waypoints_visualiser.set_visibility(False)
 
@@ -159,13 +145,6 @@ class TrajectoryCommand(CommandTerm):
         if not self.robot.is_initialized:
             return
         # current tracking point (step-0 target) is in the root frame -> transform to world
-        for vis in range(self.cfg.future_length):
-            start = vis * 3
-            stop = start + 3
-            goal_pos_w, _ = combine_frame_transforms(
-                self.robot.data.root_pos_w, self.robot.data.root_quat_w, self._command[:, start:stop]
-            )
-            self.goal_visualizer[vis].visualize(translations=goal_pos_w)
 
         # waypoints of each env's assigned trajectory (root frame) -> world, dropping padding
         wp = self.waypoints[self.traj_id]  # (num_envs, max_wp, 3)
