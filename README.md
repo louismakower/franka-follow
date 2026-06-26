@@ -16,7 +16,7 @@ Built on [Isaac Lab](https://isaac-sim.github.io/IsaacLab/) and my own
    This repo assumes IsaacLab's Python (a conda/venv with `isaaclab` importable).
 
 2. **Clone this repo with submodules** (the [`louis_rl`](https://github.com/louismakower/louis_rl)
-  SAC/PPO implementation):
+  SAC implementation):
 
     ```bash
     git clone --recursive https://github.com/louismakower/franka-follow.git
@@ -57,5 +57,5 @@ source/followtrajectory/.../tasks/manager_based/follow/
 scripts/louis_rl/
   train.py  play.py  eval.py  # train / visualise / evaluate
   run_study.py  plot_study.py  # multi-seed studies + aggregation plots
-louis_rl/  # git submodule: SAC/PPO implementation
+louis_rl/  # git submodule: SAC implementation
 ```

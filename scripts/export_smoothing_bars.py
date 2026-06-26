@@ -169,8 +169,8 @@ def main():
             "bounds": bounds,                               # fixed workspace axes for the 3-D viewer
             "order": order,                                 # dropdown order (no average; 0..n-1)
             "controllers": [                                # bar series; colours assigned by the page
-                {"key": "relative", "label": "Relative + 0.2 EMA"},
-                {"key": "absolute", "label": "Absolute joint angles"},
+                {"key": "relative", "label": "Relative"},
+                {"key": "absolute", "label": "Absolute"},
             ],
             # Two metrics on very different scales -> the page renders them on a dual y-axis ("side").
             "metrics": [

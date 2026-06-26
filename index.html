@@ -252,7 +252,7 @@
     <!-- Performance -->
     <section id="performance">
       <h2>Introduction</h2>
-      <p>The Franka robot is able to follow arbitrary trajectories supplied at test time, in the format of a list of $(x_i, y_i, z_i, t_i)$ points.  For example:</p>
+      <p>The RL trained policy is able to control the Franka robot to follow arbitrary trajectories supplied at test time, in the format of a list of $(x_i, y_i, z_i, t_i)$ points.  For example:</p>
 
       <figure class="media media--video">
         <video controls autoplay muted loop playsinline preload="metadata">
@@ -266,7 +266,7 @@
 
       <p>Averaged over the five held-out trajectories, the policy (trained without action noise) tracks the target end-effector path to $8.0\,\text{mm}$ RMSE with a mean jitter of $0.20\,\text{m/s}^2$.</p>
 
-      <p>In the rest of this page, I describe trajectories with interactive 3D plots rather than rendered videos. Drag to rotate, scroll to zoom.</p>
+      <p>In the rest of this page, I describe trajectories with interactive 3D plots rather than rendered videos.</p>
 
       <!-- Interactive 3D viewer. `data-trajectories` scopes the dropdown to specific trajectories;
            the ids are keys in webpage-data/trajectories.json (e.g. eval-0). Drop another
@@ -383,6 +383,7 @@
       <ul>
         <li>I also explore limiting the number of trajectories seen during training, and see what effect this has on tracking unseen test time trajectories.</li>
         <li>Training on a single trajectory overfits badly, but test-error reduces sharply once the policy sees >3 train trajectories.</li>
+        <li>Play with the slider below to see this effect!</li>
       </ul>
 
       <!-- Interactive 3D viewer with a trajectory dropdown + a single training-set-size slider (reuses
@@ -410,13 +411,13 @@
       Data: webpage-data/noise-grid.json (built by scripts/export_noise_grid.py). -->
       <div class="noisegrid" data-src="webpage-data/noise-grid.json" data-default="2"></div>
       <ul>
-        <li>Test time noise makes trajectories deviate further from their plan</li>
-        <li>Training with noise makes the policy better able to adapt to noise at test time, but harms performance in the absence of noise.</li>
+        <li>Unsurprisingly, test time noise makes trajectories deviate further from their plan.</li>
+        <li>Training with noise makes the policy <b>better able to adapt</b> to noise at test time, but harms performance when the noise is removed at test time.</li>
       </ul>
 
       <h3>Action delay</h3>
       <ul>
-        <li>I delay the policy's actions by an integer number of timesteps to simulate control latency.</li>
+        <li>I delay the policy's actions to simulate control latency.</li>
         <li>I ablate whether feeding the policy its action history for several timesteps lets it adapt to this delay.</li>
       </ul>
 
@@ -564,7 +565,7 @@
 
       const hint = document.createElement('p');
       hint.className = 'traj3d__hint';
-      hint.textContent = 'Drag to rotate · scroll to zoom · double-click to reset';
+      hint.textContent = 'Drag to rotate · scroll to zoom';
 
       block.append(bar, plot, hint);
 
@@ -816,7 +817,7 @@
 
       const hint = document.createElement('p');
       hint.className = 'traj3d__hint';
-      hint.textContent = 'Drag to rotate · scroll to zoom · double-click to reset';
+      hint.textContent = 'Drag to rotate · scroll to zoom';
 
       const rightCol = document.createElement('div');
       rightCol.className = 'noisegrid__col';
@@ -1051,15 +1052,29 @@
       leftCol.className = 'smoothbars__col';
       leftCol.appendChild(panel);
 
-      // right column: the 3-D achieved-path viewer for the selected controller (reuses .traj3d styling).
+      // right column: a controller toggle (kept in sync with the bar-click) above the 3-D achieved-path
+      // viewer for the selected controller (reuses .traj3d styling).
+      const ctrlBar = document.createElement('div');
+      ctrlBar.className = 'traj3d__bar';
+      const ctrlLabel = document.createElement('label');
+      ctrlLabel.textContent = 'Controller';
+      const ctrlSelect = document.createElement('select');
+      controllers.forEach((c) => {
+        const opt = document.createElement('option');
+        opt.value = c.key; opt.textContent = c.label || c.key;
+        ctrlSelect.appendChild(opt);
+      });
+      ctrlSelect.value = controllers[0].key;       // default: the relative (default) controller
+      ctrlBar.append(ctrlLabel, ctrlSelect);
+
       const plot = document.createElement('div');
       plot.className = 'traj3d__plot';
       const hint = document.createElement('p');
       hint.className = 'traj3d__hint';
-      hint.textContent = 'Drag to rotate · scroll to zoom · double-click to reset';
+      hint.textContent = 'Drag to rotate · scroll to zoom';
       const rightCol = document.createElement('div');
       rightCol.className = 'smoothbars__col';
-      rightCol.append(plot, hint);
+      rightCol.append(ctrlBar, plot, hint);
 
       const colsEl = document.createElement('div');
       colsEl.className = 'smoothbars__cols';
@@ -1067,8 +1082,6 @@
 
       const note = document.createElement('p');
       note.className = 'smoothbars__hint';
-      note.textContent = 'Relative + 0.2 EMA vs absolute joint angles · scored over the converged loop '
-        + '(excluding the fly-in); bars average seeds 0–1, the plotted path is seed 0.';
 
       block.append(bar, colsEl, note);
 
@@ -1076,18 +1089,21 @@
         doc, barEl, plotEl: plot, metrics, controllers,
         bounds: (doc.meta && doc.meta.bounds) || DEFAULT_BOUNDS,
         trajKey: () => select.value,
-        controller: controllers[0].key,        // default: the relative (default) controller's path
+        get controller() { return ctrlSelect.value; },   // the toggle is the source of truth
       };
       mounted.push(state);
 
       select.addEventListener('change', () => render(state));
+      // the controller toggle and the bar-click are two ways to pick the same thing; both funnel
+      // through ctrlSelect.value so the dropdown, the outlined bar pair and the 3-D path stay in sync.
+      ctrlSelect.addEventListener('change', () => render(state));
       render(state);                            // first paint also turns barEl into a Plotly graph div
-      // click a bar -> select that controller (pointNumber 0/1 maps to controllers[0/1]) and re-render
-      // so the outline moves and the 3-D path swaps to the clicked controller.
+      // click a bar -> move the toggle to that controller (pointNumber 0/1 maps to controllers[0/1])
+      // and re-render so the outline moves and the 3-D path swaps to the clicked controller.
       barEl.on('plotly_click', (ev) => {
         const i = ev.points && ev.points[0] && ev.points[0].pointNumber;
         if (i == null || !controllers[i]) return;
-        state.controller = controllers[i].key;
+        ctrlSelect.value = controllers[i].key;
         render(state);
       });
     }
